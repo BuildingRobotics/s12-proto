@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/SafetyCulture/s12-proto/protobuf/protoc-gen-logger/plugin"
+	"github.com/BuildingRobotics/s12-proto/protobuf/protoc-gen-logger/plugin"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
 )

@@ -3,7 +3,7 @@
 package main
 
 import (
-	"github.com/SafetyCulture/s12-proto/protobuf/protoc-gen-gogrpcmock/plugin"
+	"github.com/BuildingRobotics/s12-proto/protobuf/protoc-gen-gogrpcmock/plugin"
 	"github.com/gogo/protobuf/vanity/command"
 )
 

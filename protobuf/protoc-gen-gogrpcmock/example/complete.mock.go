@@ -7,7 +7,7 @@ import context "context"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import _ "github.com/SafetyCulture/s12-proto/protobuf/s12proto"
+import _ "github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

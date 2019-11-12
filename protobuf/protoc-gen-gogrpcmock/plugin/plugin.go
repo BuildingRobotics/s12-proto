@@ -13,7 +13,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/icrowley/fake"
 
-	"github.com/SafetyCulture/s12-proto/protobuf/s12proto"
+	"github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
 
 	"github.com/gogo/protobuf/gogoproto"
 	"github.com/gogo/protobuf/proto"

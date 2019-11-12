@@ -15,10 +15,10 @@ protoc-gen-cruxclient: protobuf/protoc-gen-cruxclient/cruxclient_generator.o
 
 .PHONY: install-govalidator
 install-govalidator:
-	go install github.com/SafetyCulture/s12-proto/protobuf/protoc-gen-govalidator
+	go install github.com/BuildingRobotics/s12-proto/protobuf/protoc-gen-govalidator
 
 .PHONY: install-logger
-	go install github.com/SafetyCulture/s12-proto/protobuf/protoc-gen-logger
+	go install github.com/BuildingRobotics/s12-proto/protobuf/protoc-gen-logger
 
 .PHONY: install-cruxclient
 install-cruxclient: protoc-gen-cruxclient
@@ -39,7 +39,7 @@ govalidator: install-govalidator
 
 .PHONY: govalidator-test
 govalidator-test: 
-	go test github.com/SafetyCulture/s12-proto/protobuf/protoc-gen-govalidator/example -v
+	go test github.com/BuildingRobotics/s12-proto/protobuf/protoc-gen-govalidator/example -v
 
 .PHONY: logger
 logger: install-logger
@@ -62,7 +62,7 @@ cruxclient: install-cruxclient
 
 .PHONY: install-gogrpcmock
 install-gogrpcmock:
-	go install github.com/SafetyCulture/s12-proto/protobuf/protoc-gen-gogrpcmock
+	go install github.com/BuildingRobotics/s12-proto/protobuf/protoc-gen-gogrpcmock
 
 .PHONY: gogrpcmock
 gogrpcmock: install-gogrpcmock
