@@ -1,4 +1,4 @@
-module github.com/SafetyCulture/s12-proto
+module github.com/BuildingRobotics/s12-proto
 
 go 1.13
 
