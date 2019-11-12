@@ -4,11 +4,11 @@
 package example
 
 import reflect "reflect"
-import github_com_SafetyCulture_s12_proto_protobuf_s12proto "github.com/SafetyCulture/s12-proto/protobuf/s12proto"
+import github_com_BuildingRobotics_s12_proto_protobuf_s12proto "github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import _ "github.com/SafetyCulture/s12-proto/protobuf/s12proto"
+import _ "github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
 import _ "github.com/gogo/protobuf/gogoproto"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -16,7 +16,7 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-func (this *ExampleMessage) LogPayload(logger github_com_SafetyCulture_s12_proto_protobuf_s12proto.Logger) {
+func (this *ExampleMessage) LogPayload(logger github_com_BuildingRobotics_s12_proto_protobuf_s12proto.Logger) {
 	logger.Debug("ExampleMessage", ".", "Id", this.Id)
 	logger.Error("ExampleMessage", ".", "Password", this.Password)
 	logger.Info("ExampleMessage", ".", "SomeKindOfInnerValue", this.SomeKindOfInnerValue)
@@ -25,8 +25,8 @@ func (this *ExampleMessage) LogPayload(logger github_com_SafetyCulture_s12_proto
 	}
 	logger.Error("ExampleMessage", ".", "MapField", this.MapField)
 }
-func (this *OneOfMessage) LogPayload(logger github_com_SafetyCulture_s12_proto_protobuf_s12proto.Logger) {
+func (this *OneOfMessage) LogPayload(logger github_com_BuildingRobotics_s12_proto_protobuf_s12proto.Logger) {
 }
-func (this *InnerMessage) LogPayload(logger github_com_SafetyCulture_s12_proto_protobuf_s12proto.Logger) {
+func (this *InnerMessage) LogPayload(logger github_com_BuildingRobotics_s12_proto_protobuf_s12proto.Logger) {
 	logger.Debug("InnerMessage", ".", "Body", this.Body)
 }

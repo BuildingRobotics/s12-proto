@@ -5,7 +5,7 @@ A `protoc` plugin that generates `Validate() error` functions on Go proto `struc
 ## Usage
 
 ```
-$ go get github.com/SafetyCulture/s12-proto/protobuf/protoc-gen-govalidator
+$ go get github.com/BuildingRobotics/s12-proto/protobuf/protoc-gen-govalidator
 $ protoc -I. --gogo_out=:. --govalidator_out=. example.proto
 ```
 

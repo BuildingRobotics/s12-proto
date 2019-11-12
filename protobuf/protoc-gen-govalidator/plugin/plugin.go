@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	validator "github.com/SafetyCulture/s12-proto/protobuf/s12proto"
+	validator "github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
 	"github.com/gogo/protobuf/gogoproto"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
@@ -39,7 +39,7 @@ func (p *plugin) Generate(file *generator.FileDescriptor) {
 	p.PluginImports = generator.NewPluginImports(p.Generator)
 	p.fmtPkg = p.NewImport("fmt")
 	p.regexPkg = p.NewImport("regexp")
-	p.s12protoPkg = p.NewImport("github.com/SafetyCulture/s12-proto/protobuf/s12proto")
+	p.s12protoPkg = p.NewImport("github.com/BuildingRobotics/s12-proto/protobuf/s12proto")
 
 	for _, msg := range file.Messages() {
 		if msg.DescriptorProto.GetOptions().GetMapEntry() {

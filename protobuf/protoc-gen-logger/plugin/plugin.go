@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	logger "github.com/SafetyCulture/s12-proto/protobuf/s12proto"
+	logger "github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/protoc-gen-gogo/descriptor"
 	"github.com/gogo/protobuf/protoc-gen-gogo/generator"
@@ -30,7 +30,7 @@ func (p *plugin) Init(g *generator.Generator) {
 func (p *plugin) Generate(file *generator.FileDescriptor) {
 	p.PluginImports = generator.NewPluginImports(p.Generator)
 	p.reflectPkg = p.NewImport("reflect")
-	p.s12Proto = p.NewImport("github.com/SafetyCulture/s12-proto/protobuf/s12proto")
+	p.s12Proto = p.NewImport("github.com/BuildingRobotics/s12-proto/protobuf/s12proto")
 
 	for _, msg := range file.Messages() {
 		p.generateParseFunction(file, msg)

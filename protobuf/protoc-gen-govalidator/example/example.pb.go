@@ -5,7 +5,7 @@ package example
 
 import (
 	fmt "fmt"
-	_ "github.com/SafetyCulture/s12-proto/protobuf/s12proto"
+	_ "github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	math "math"

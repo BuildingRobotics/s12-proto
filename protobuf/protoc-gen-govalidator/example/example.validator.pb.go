@@ -6,11 +6,12 @@ package example
 import (
 	fmt "fmt"
 	math "math"
-	proto "github.com/gogo/protobuf/proto"
-	_ "github.com/gogo/protobuf/gogoproto"
-	_ "github.com/SafetyCulture/s12-proto/protobuf/s12proto"
 	regexp "regexp"
-	github_com_SafetyCulture_s12_proto_protobuf_s12proto "github.com/SafetyCulture/s12-proto/protobuf/s12proto"
+
+	_ "github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
+	github_com_BuildingRobotics_s12_proto_protobuf_s12proto "github.com/BuildingRobotics/s12-proto/protobuf/s12proto"
+	_ "github.com/gogo/protobuf/gogoproto"
+	proto "github.com/gogo/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -21,10 +22,10 @@ var _ = math.Inf
 var _regex_ExampleMessage_Email = regexp.MustCompile(`.+\@.+\..+`)
 
 func (m *ExampleMessage) Validate() error {
-	if !github_com_SafetyCulture_s12_proto_protobuf_s12proto.IsUUID(m.Id) {
+	if !github_com_BuildingRobotics_s12_proto_protobuf_s12proto.IsUUID(m.Id) {
 		return fmt.Errorf(`Id: value '%v' must be parsable as a UUID`, m.Id)
 	}
-	if len(m.UserID) != github_com_SafetyCulture_s12_proto_protobuf_s12proto.UUIDSize {
+	if len(m.UserID) != github_com_BuildingRobotics_s12_proto_protobuf_s12proto.UUIDSize {
 		return fmt.Errorf(`UserID: value '%v' must be exactly 16 bytes long to be a valid UUID`, m.UserID)
 	}
 	if !_regex_ExampleMessage_Email.MatchString(m.Email) {
@@ -43,19 +44,19 @@ func (m *ExampleMessage) Validate() error {
 		return fmt.Errorf(`Score: value '%v' must be less than or equal to '100'`, m.Score)
 	}
 	if m.Inner != nil {
-		if v, ok := interface{}(m.Inner).(github_com_SafetyCulture_s12_proto_protobuf_s12proto.Validator); ok {
+		if v, ok := interface{}(m.Inner).(github_com_BuildingRobotics_s12_proto_protobuf_s12proto.Validator); ok {
 			if err := v.Validate(); err != nil {
-				return github_com_SafetyCulture_s12_proto_protobuf_s12proto.FieldError("Inner", err)
+				return github_com_BuildingRobotics_s12_proto_protobuf_s12proto.FieldError("Inner", err)
 			}
 		}
 	}
 	for _, item := range m.Ids {
-		if len(item) != github_com_SafetyCulture_s12_proto_protobuf_s12proto.UUIDSize {
+		if len(item) != github_com_BuildingRobotics_s12_proto_protobuf_s12proto.UUIDSize {
 			return fmt.Errorf(`Ids: value '%v' must be exactly 16 bytes long to be a valid UUID`, item)
 		}
 	}
 	if m.MediaId != "" {
-		if !github_com_SafetyCulture_s12_proto_protobuf_s12proto.IsUUID(m.MediaId) {
+		if !github_com_BuildingRobotics_s12_proto_protobuf_s12proto.IsUUID(m.MediaId) {
 			return fmt.Errorf(`MediaId: value '%v' must be parsable as a UUID`, m.MediaId)
 		}
 	}
@@ -70,19 +71,19 @@ func (m *ExampleMessage) Validate() error {
 		return fmt.Errorf("message MsgRequired is required")
 	}
 	if m.MsgRequired != nil {
-		if v, ok := interface{}(m.MsgRequired).(github_com_SafetyCulture_s12_proto_protobuf_s12proto.Validator); ok {
+		if v, ok := interface{}(m.MsgRequired).(github_com_BuildingRobotics_s12_proto_protobuf_s12proto.Validator); ok {
 			if err := v.Validate(); err != nil {
-				return github_com_SafetyCulture_s12_proto_protobuf_s12proto.FieldError("MsgRequired", err)
+				return github_com_BuildingRobotics_s12_proto_protobuf_s12proto.FieldError("MsgRequired", err)
 			}
 		}
 	}
-	if !github_com_SafetyCulture_s12_proto_protobuf_s12proto.IsLegacyID(m.LegacyID) {
+	if !github_com_BuildingRobotics_s12_proto_protobuf_s12proto.IsLegacyID(m.LegacyID) {
 		return fmt.Errorf(`LegacyID: value '%v' must be parsable as a UUID or a legacy ID`, m.LegacyID)
 	}
 	if m.InnerLegacyId != nil {
-		if v, ok := interface{}(m.InnerLegacyId).(github_com_SafetyCulture_s12_proto_protobuf_s12proto.Validator); ok {
+		if v, ok := interface{}(m.InnerLegacyId).(github_com_BuildingRobotics_s12_proto_protobuf_s12proto.Validator); ok {
 			if err := v.Validate(); err != nil {
-				return github_com_SafetyCulture_s12_proto_protobuf_s12proto.FieldError("InnerLegacyId", err)
+				return github_com_BuildingRobotics_s12_proto_protobuf_s12proto.FieldError("InnerLegacyId", err)
 			}
 		}
 	}
@@ -90,14 +91,14 @@ func (m *ExampleMessage) Validate() error {
 }
 
 func (m *InnerMessage) Validate() error {
-	if !github_com_SafetyCulture_s12_proto_protobuf_s12proto.IsUUID(m.Id) {
+	if !github_com_BuildingRobotics_s12_proto_protobuf_s12proto.IsUUID(m.Id) {
 		return fmt.Errorf(`Id: value '%v' must be parsable as a UUID`, m.Id)
 	}
 	return nil
 }
 
 func (m *InnerMessageWithLegacyId) Validate() error {
-	if !github_com_SafetyCulture_s12_proto_protobuf_s12proto.IsLegacyID(m.Id) {
+	if !github_com_BuildingRobotics_s12_proto_protobuf_s12proto.IsLegacyID(m.Id) {
 		return fmt.Errorf(`Id: value '%v' must be parsable as a UUID or a legacy ID`, m.Id)
 	}
 	return nil
