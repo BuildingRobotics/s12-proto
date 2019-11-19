@@ -172,11 +172,12 @@ func (g *grpcmock) generateMockMessage(msg *generator.Descriptor, inner, nullabl
 		g.generateMockField(fieldName, fieldType, repeated, nullable, field, depth)
 	}
 
+	packageName := g.DefaultPackageName(msg)
 	for _, of := range oFields {
 		sf := of.subFields[r.Intn(len(of.subFields))]
 		nullable := gogoproto.IsNullable(sf.protoField) && sf.protoField.IsMessage()
 
-		g.P(of.fieldName, `: `, `&`, sf.fieldStructName, `{`)
+		g.P(of.fieldName, `: `, `&`, packageName, sf.fieldStructName, `{`)
 		g.In()
 		g.generateMockField(sf.fieldName, sf.typeName, false, nullable, sf.protoField, 10)
 		g.Out()
