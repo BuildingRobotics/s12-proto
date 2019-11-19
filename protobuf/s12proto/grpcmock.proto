@@ -61,4 +61,6 @@ message FieldMock {
   optional bool week_day_short = 47;
   optional bool zip = 48;
   optional bool coordinates = 49;
+  optional bool date = 50;
+  optional bool datetime = 51;
 }

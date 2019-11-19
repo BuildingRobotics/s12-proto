@@ -465,6 +465,27 @@ func generateStringValue(fieldName string, field *descriptor.FieldDescriptorProt
 			sb.WriteString(fmt.Sprintf("%.6f,%.6f", fake.Latitude(), fake.Longitude()))
 		}
 
+		if boolFromPtr(mocks.Date) {
+			sb.WriteString(fmt.Sprintf(
+				"%d-%d-%d",
+				fake.Year(2010, 2020),
+				fake.MonthNum(),
+				fake.Day(),
+			))
+		}
+
+		if boolFromPtr(mocks.Datetime) {
+			sb.WriteString(fmt.Sprintf(
+				"%d-%.2d-%.2dT%.2d:%.2d:%.2d.000",
+				fake.Year(2010, 2020),
+				fake.MonthNum(),
+				fake.Day(),
+				r.Intn(24),
+				r.Intn(60),
+				r.Intn(60),
+			))
+		}
+
 		if boolFromPtr(mocks.Month) {
 			sb.WriteString(fake.Month())
 		}
