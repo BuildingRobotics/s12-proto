@@ -462,12 +462,7 @@ func generateStringValue(fieldName string, field *descriptor.FieldDescriptorProt
 		}
 
 		if boolFromPtr(mocks.Coordinates) {
-			sb.WriteString(
-				fmt.Sprintf(
-					"%f.%f",
-					strconv.FormatFloat(float64(fake.Latitude()), 'f', 6, 32),
-					strconv.FormatFloat(float64(fake.Longitude()), 'f', 6, 32),
-				))
+			sb.WriteString(fmt.Sprintf("%.6f,%.6f", fake.Latitude(), fake.Longitude()))
 		}
 
 		if boolFromPtr(mocks.Month) {
