@@ -425,6 +425,122 @@ func generateStringValue(fieldName string, field *descriptor.FieldDescriptorProt
 			sb.WriteString(fake.HexColor())
 		}
 
+		if boolFromPtr(mocks.Url) {
+			sb.WriteString(fakeURL())
+		}
+
+		if boolFromPtr(mocks.City) {
+			sb.WriteString(fake.City())
+		}
+
+		if boolFromPtr(mocks.Country) {
+			sb.WriteString(fake.Country())
+		}
+
+		if boolFromPtr(mocks.Continent) {
+			sb.WriteString(fake.Continent())
+		}
+
+		if boolFromPtr(mocks.Gender) {
+			sb.WriteString(fake.Gender())
+		}
+
+		if boolFromPtr(mocks.Ipv4) {
+			sb.WriteString(fake.IPv4())
+		}
+
+		if boolFromPtr(mocks.Ipv6) {
+			sb.WriteString(fake.IPv6())
+		}
+
+		if boolFromPtr(mocks.Latitude) {
+			sb.WriteString(strconv.FormatFloat(float64(fake.Latitude()), 'f', 6, 32))
+		}
+
+		if boolFromPtr(mocks.Longitude) {
+			sb.WriteString(strconv.FormatFloat(float64(fake.Longitude()), 'f', 6, 32))
+		}
+
+		if boolFromPtr(mocks.Month) {
+			sb.WriteString(fake.Month())
+		}
+
+		if boolFromPtr(mocks.MonthShort) {
+			sb.WriteString(fake.MonthShort())
+		}
+
+		if boolFromPtr(mocks.SimplePassword) {
+			sb.WriteString(fake.SimplePassword())
+		}
+
+		if boolFromPtr(mocks.State) {
+			sb.WriteString(fake.State())
+		}
+
+		if boolFromPtr(mocks.StateAbbrev) {
+			sb.WriteString(fake.StateAbbrev())
+		}
+
+		if boolFromPtr(mocks.Street) {
+			sb.WriteString(fake.Street())
+		}
+
+		if boolFromPtr(mocks.StreetAddress) {
+			sb.WriteString(fake.StreetAddress())
+		}
+
+		if boolFromPtr(mocks.Title) {
+			sb.WriteString(fake.Title())
+		}
+
+		if boolFromPtr(mocks.TopLevelDomain) {
+			sb.WriteString(fake.TopLevelDomain())
+		}
+
+		if boolFromPtr(mocks.UserAgent) {
+			sb.WriteString(fake.UserAgent())
+		}
+
+		if boolFromPtr(mocks.UserName) {
+			sb.WriteString(fake.UserName())
+		}
+
+		if boolFromPtr(mocks.WeekDay) {
+			sb.WriteString(fake.WeekDay())
+		}
+
+		if boolFromPtr(mocks.WeekDayShort) {
+			sb.WriteString(fake.WeekDayShort())
+		}
+
+		if boolFromPtr(mocks.Zip) {
+			sb.WriteString(fake.Zip())
+		}
+
+		if boolFromPtr(mocks.Intstr) {
+			n := 1000
+
+			if mocks.Intn != nil && *mocks.Intn > 0 {
+				n = int(*mocks.Intn)
+			}
+
+			sb.WriteString(strconv.Itoa(r.Intn(n)))
+		}
+
+		if boolFromPtr(mocks.Floatstr) {
+			n, m := 1000, 10000
+
+			if mocks.Floatn != nil && *mocks.Floatn > 0 {
+				n = int(*mocks.Floatn)
+			}
+
+			sb.WriteString(fmt.Sprintf("%d.%d", r.Intn(n), r.Intn(m)))
+		}
+
+		if len(mocks.Suffix) > 0 {
+			sb.WriteString(mocks.Suffix[r.Intn(len(mocks.Suffix))])
+		}
+
 		return sb.String()
 	}
 
