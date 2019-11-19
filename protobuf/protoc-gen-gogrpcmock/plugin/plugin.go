@@ -113,7 +113,7 @@ func (g *grpcmock) mockMethod(servTypeName string, method *descriptor.MethodDesc
 	if m, ok := msg.(*generator.Descriptor); ok && !m.GetOptions().GetMapEntry() {
 		g.P(`res := `)
 		// TODO: Depth should be a cmd param
-		g.generateMockMessage(m, false, true, 5)
+		g.generateMockMessage(m, false, true, 10)
 		g.P(`return res, nil`)
 	} else {
 		// Should this return an error?
