@@ -201,7 +201,7 @@ func (g *grpcmock) generateMockField(fieldName, fieldType string, repeated, null
 	} else if isSupportedFloat(field) {
 		g.generateMockFloat(fieldName, fieldType, repeated, field)
 	} else if field.IsEnum() {
-		g.generateMockEnum(fieldName, fieldType, field)
+		g.generateMockEnum(fieldName, fieldType, repeated, field)
 	} else if field.IsBool() {
 		g.generateMockBool(fieldName)
 	} else if field.IsMessage() {
@@ -259,7 +259,23 @@ func (g *grpcmock) generateMockFloat(fieldName, fieldType string, repeated bool,
 	g.P(fieldName, `: `, generateFloatValue(fieldName, field), `,`)
 }
 
-func (g *grpcmock) generateMockEnum(fieldName, fieldType string, field *descriptor.FieldDescriptorProto) {
+func (g *grpcmock) generateMockEnum(fieldName, fieldType string, repeated bool, field *descriptor.FieldDescriptorProto) {
+	if repeated {
+		g.P(fieldName, `: `, fieldType, `{`)
+		g.In()
+
+		for i := 0; i < getRepeatCount(field); i++ {
+			enum := g.ObjectNamed(field.GetTypeName()).(*generator.EnumDescriptor)
+			enumValues := enum.GetValue()
+			enumValue := enumValues[r.Intn(len(enumValues))]
+			g.P(strconv.Itoa(int(enumValue.GetNumber())), `,`)
+		}
+
+		g.Out()
+		g.P(`},`)
+		return
+	}
+
 	enum := g.ObjectNamed(field.GetTypeName()).(*generator.EnumDescriptor)
 	enumValues := enum.GetValue()
 	enumValue := enumValues[r.Intn(len(enumValues))]
