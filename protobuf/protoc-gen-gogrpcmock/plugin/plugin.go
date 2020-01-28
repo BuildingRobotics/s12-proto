@@ -5,6 +5,7 @@ package plugin
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -33,7 +34,8 @@ var (
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-const repeatCount = 8
+const defaultRepeatCount = 3
+const defaultMessageDepth = 10
 
 type grpcmock struct {
 	*generator.Generator
@@ -50,6 +52,25 @@ type oneofSubField struct {
 	typeName        string
 	fieldStructName string
 	protoField      *descriptor.FieldDescriptorProto
+}
+
+func DefaultRepeatCount() int {
+	repeatCount, exists := os.LookupEnv("GRPC_MOCK_DEFAULT_REPEATN")
+	if exists {
+		if count, err := strconv.Atoi(repeatCount); err == nil {
+			return count
+		}
+	}
+	return defaultRepeatCount
+}
+func DefaultMessageDepth() int {
+	messageDepth, exists := os.LookupEnv("GRPC_MOCK_DEFAULT_MESSAGE_DEPTH")
+	if exists {
+		if depth, err := strconv.Atoi(messageDepth); err == nil {
+			return depth
+		}
+	}
+	return defaultMessageDepth
 }
 
 func New() generator.Plugin {
@@ -113,7 +134,7 @@ func (g *grpcmock) mockMethod(servTypeName string, method *descriptor.MethodDesc
 	if m, ok := msg.(*generator.Descriptor); ok && !m.GetOptions().GetMapEntry() {
 		g.P(`res := `)
 		// TODO: Depth should be a cmd param
-		g.generateMockMessage(m, false, true, 10)
+		g.generateMockMessage(m, false, true, DefaultMessageDepth())
 		g.P(`return res, nil`)
 	} else {
 		// Should this return an error?
@@ -127,6 +148,7 @@ func (g *grpcmock) mockMethod(servTypeName string, method *descriptor.MethodDesc
 func (g *grpcmock) generateMockMessage(msg *generator.Descriptor, inner, nullable bool, depth int) {
 	depth--
 	if depth < 0 {
+		g.P("nil,")
 		return
 	}
 
@@ -179,7 +201,7 @@ func (g *grpcmock) generateMockMessage(msg *generator.Descriptor, inner, nullabl
 
 		g.P(of.fieldName, `: `, `&`, packageName, sf.fieldStructName, `{`)
 		g.In()
-		g.generateMockField(sf.fieldName, sf.typeName, false, nullable, sf.protoField, 10)
+		g.generateMockField(sf.fieldName, sf.typeName, false, nullable, sf.protoField, DefaultMessageDepth())
 		g.Out()
 		g.P(`},`)
 	}
@@ -672,5 +694,5 @@ func getRepeatCount(field *descriptor.FieldDescriptorProto) int {
 	if mocks := getFieldMocksIfAny(field); mocks != nil && mocks.Repeatn != nil {
 		return int(mocks.GetRepeatn())
 	}
-	return repeatCount
+	return DefaultRepeatCount()
 }
