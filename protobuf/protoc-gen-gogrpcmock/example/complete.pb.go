@@ -19,7 +19,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type MsgRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -176,16 +176,16 @@ type isComplete_AnotherOneof interface {
 }
 
 type Complete_CouldBe struct {
-	CouldBe string `protobuf:"bytes,34,opt,name=could_be,json=couldBe,proto3,oneof"`
+	CouldBe string `protobuf:"bytes,34,opt,name=could_be,json=couldBe,proto3,oneof" json:"could_be,omitempty"`
 }
 type Complete_OrCouldBe struct {
-	OrCouldBe *SubMessage `protobuf:"bytes,35,opt,name=or_could_be,json=orCouldBe,proto3,oneof"`
+	OrCouldBe *SubMessage `protobuf:"bytes,35,opt,name=or_could_be,json=orCouldBe,proto3,oneof" json:"or_could_be,omitempty"`
 }
 type Complete_This struct {
-	This string `protobuf:"bytes,36,opt,name=this,proto3,oneof"`
+	This string `protobuf:"bytes,36,opt,name=this,proto3,oneof" json:"this,omitempty"`
 }
 type Complete_That struct {
-	That string `protobuf:"bytes,37,opt,name=that,proto3,oneof"`
+	That string `protobuf:"bytes,37,opt,name=that,proto3,oneof" json:"that,omitempty"`
 }
 
 func (*Complete_CouldBe) isComplete_SomeOneof()   {}
@@ -465,116 +465,14 @@ func (m *Complete) GetThat() string {
 	return ""
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Complete) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Complete_OneofMarshaler, _Complete_OneofUnmarshaler, _Complete_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Complete) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Complete_CouldBe)(nil),
 		(*Complete_OrCouldBe)(nil),
 		(*Complete_This)(nil),
 		(*Complete_That)(nil),
 	}
-}
-
-func _Complete_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Complete)
-	// some_oneof
-	switch x := m.SomeOneof.(type) {
-	case *Complete_CouldBe:
-		_ = b.EncodeVarint(34<<3 | proto.WireBytes)
-		_ = b.EncodeStringBytes(x.CouldBe)
-	case *Complete_OrCouldBe:
-		_ = b.EncodeVarint(35<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.OrCouldBe); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Complete.SomeOneof has unexpected type %T", x)
-	}
-	// another_oneof
-	switch x := m.AnotherOneof.(type) {
-	case *Complete_This:
-		_ = b.EncodeVarint(36<<3 | proto.WireBytes)
-		_ = b.EncodeStringBytes(x.This)
-	case *Complete_That:
-		_ = b.EncodeVarint(37<<3 | proto.WireBytes)
-		_ = b.EncodeStringBytes(x.That)
-	case nil:
-	default:
-		return fmt.Errorf("Complete.AnotherOneof has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Complete_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Complete)
-	switch tag {
-	case 34: // some_oneof.could_be
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.SomeOneof = &Complete_CouldBe{x}
-		return true, err
-	case 35: // some_oneof.or_could_be
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(SubMessage)
-		err := b.DecodeMessage(msg)
-		m.SomeOneof = &Complete_OrCouldBe{msg}
-		return true, err
-	case 36: // another_oneof.this
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.AnotherOneof = &Complete_This{x}
-		return true, err
-	case 37: // another_oneof.that
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.AnotherOneof = &Complete_That{x}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Complete_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Complete)
-	// some_oneof
-	switch x := m.SomeOneof.(type) {
-	case *Complete_CouldBe:
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.CouldBe)))
-		n += len(x.CouldBe)
-	case *Complete_OrCouldBe:
-		s := proto.Size(x.OrCouldBe)
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	// another_oneof
-	switch x := m.AnotherOneof.(type) {
-	case *Complete_This:
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.This)))
-		n += len(x.This)
-	case *Complete_That:
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.That)))
-		n += len(x.That)
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type SubMessage struct {
