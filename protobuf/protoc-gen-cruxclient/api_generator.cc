@@ -3,18 +3,21 @@
 #include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/compiler/plugin.h>
 #include <google/protobuf/descriptor.h>
+#include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <iostream>
 #include <vector>
 #include <map>
 #include <memory>
+#include <set>
 #include "common.h"
 
 using google::protobuf::Descriptor;
 using google::protobuf::FileDescriptor;
 using google::protobuf::MethodDescriptor;
 using google::protobuf::ServiceDescriptor;
+using google::protobuf::FileOptions;
 using google::protobuf::compiler::CodeGenerator;
 using google::protobuf::compiler::GeneratorContext;
 using google::protobuf::compiler::ParseGeneratorParameter;
@@ -90,8 +93,10 @@ void APIGenerator::PrintHeaderAPIs(
     const ServiceDescriptor *service = file->service(service_index);
     vars["service_name"] = service->name();
     vars["service_fullname"] = DotsToColons(service->full_name());
+    vars["service_fullname_underscore"] = DotsToUnderscores(service->full_name());
 
     printer->Print(vars, "namespace $service_name$NS {\n");
+    printer->Print(vars, "const char kServiceName[] = \"$service_fullname_underscore$\";\n");
 
     for (int method_index = 0; method_index < service->method_count();
         ++method_index) {
@@ -134,38 +139,11 @@ void APIGenerator::PrintHeaderAPIs(
       printer->Print("};\n\n");
     }
 
-    printer->Print("template<typename RESPONSE>\n");
     printer->Print("grpc::Status Invoke("
     "const std::shared_ptr<crux::engine::ChannelProvider>& provider, "
     "grpc::ClientContext* context, "
     "const google::protobuf::Any& request_data, "
-    "const std::string& method_name) {\n");
-    printer->Indent();
-    for (int method_index = 0; method_index < service->method_count();
-        ++method_index) {
-      const MethodDescriptor *method = service->method(method_index);
-      vars["method_name"] = method->name();
-      vars["request"] = ClassName(method->input_type(), true);
-      vars["response"] = ClassName(method->output_type(), true);
-      vars["api_name"] = method->name() + "API";
-
-      printer->Print(vars, "if (method_name == \"$method_name$\") {\n");
-      printer->Indent();
-      printer->Print(vars, "$request$ request;\n");
-      printer->Print("if (!request_data.UnpackTo(&request)) {\n");
-      printer->Indent();
-      printer->Print("return grpc::Status(grpc::StatusCode::DATA_LOSS, \"Unable to unpack the request data\");\n");
-      printer->Outdent();
-      printer->Print("}\n");
-      printer->Print(vars, "$api_name$ api = $api_name$(provider);\n");
-      printer->Print(vars, "$response$ response;\n");
-      printer->Print("return api.Execute(context, request, &response);\n");
-      printer->Outdent();
-      printer->Print("}\n\n");
-    }
-    printer->Print("return grpc::Status(grpc::StatusCode::DATA_LOSS, \"Invalid method name\");\n");
-    printer->Outdent();
-    printer->Print("}\n\n");
+    "const std::string& method_name);\n");
 
     printer->Print(vars, "}  // namespace $service_name$NS\n\n");
   }
@@ -245,7 +223,7 @@ void APIGenerator::PrintSourceAPIs(
 
       printer->Print(vars, "std::string $api_name$::ServiceName() {\n");
       printer->Indent();
-      printer->Print(vars, "return \"$service_fullname_underscore$\";\n");
+      printer->Print("return kServiceName;\n");
       printer->Outdent();
       printer->Print("}\n\n");
 
@@ -280,6 +258,39 @@ void APIGenerator::PrintSourceAPIs(
       printer->Outdent();
       printer->Print("}\n\n");
     }
+
+    printer->Print("grpc::Status Invoke("
+    "const std::shared_ptr<crux::engine::ChannelProvider>& provider, "
+    "grpc::ClientContext* context, "
+    "const google::protobuf::Any& request_data, "
+    "const std::string& method_name) {\n");
+    printer->Indent();
+    for (int method_index = 0; method_index < service->method_count();
+        ++method_index) {
+      const MethodDescriptor *method = service->method(method_index);
+      vars["method_name"] = method->name();
+      vars["request"] = ClassName(method->input_type(), true);
+      vars["response"] = ClassName(method->output_type(), true);
+      vars["api_name"] = method->name() + "API";
+
+      printer->Print(vars, "if (method_name == \"$method_name$\") {\n");
+      printer->Indent();
+      printer->Print(vars, "$request$ request;\n");
+      printer->Print("if (!request_data.UnpackTo(&request)) {\n");
+      printer->Indent();
+      printer->Print("return grpc::Status(grpc::StatusCode::DATA_LOSS, \"Unable to unpack the request data\");\n");
+      printer->Outdent();
+      printer->Print("}\n");
+      printer->Print(vars, "$api_name$ api = $api_name$(provider);\n");
+      printer->Print(vars, "$response$ response;\n");
+      printer->Print("return api.Execute(context, request, &response);\n");
+      printer->Outdent();
+      printer->Print("}\n\n");
+    }
+    printer->Print("return grpc::Status(grpc::StatusCode::DATA_LOSS, \"Invalid method name\");\n");
+    printer->Outdent();
+    printer->Print("}\n\n");
+
     printer->Print(vars, "}  // namespace $service_name$NS\n\n");
   }
 }
@@ -319,6 +330,300 @@ void APIGenerator::GenerateAPISource(
   PrintSourceEpilogue(&printer, file);
 }
 
+void APIGenerator::GenerateDjinniYAML(
+  const google::protobuf::FileDescriptor *file,
+  google::protobuf::compiler::GeneratorContext *context) const {
+  string file_name = StripProto(file->name());
+  std::vector<std::string> paths = tokenize(StripProto(file_name), "/");
+  paths.pop_back();
+  std::string dir = join(paths, "/");
+
+  std::unique_ptr<ZeroCopyOutputStream> output(
+      context->Open(file_name + ".djinni.yaml"));
+  Printer printer(output.get(), '$');
+  printer.Print("# This file is generated by s12-proto api generator. Please DO NOT modify.\n");
+
+  for (int dep_index = 0; dep_index < file->dependency_count(); ++dep_index) {
+    auto imported_file = file->dependency(dep_index);
+    std::vector<std::string> dep_paths = tokenize(StripProto(imported_file->name()), "/");
+    dep_paths.pop_back();
+    std::string dep_dir = join(dep_paths, "/");
+    if (dep_dir == dir) {
+      PrintDjinniYAML(&printer, imported_file, file_name);
+    }
+  }
+
+  PrintDjinniYAML(&printer, file, file_name);
+}
+
+void APIGenerator::GenerateDjinniObjcSupport(
+  const google::protobuf::FileDescriptor *file,
+  google::protobuf::compiler::GeneratorContext *context) const {
+  string file_name = StripProto(file->name());
+  std::vector<std::string> paths = tokenize(StripProto(file_name), "/");
+  paths.pop_back();
+  std::string dir = join(paths, "/");
+
+  std::unique_ptr<ZeroCopyOutputStream> output(
+      context->Open(file_name + ".djinni.objc.h"));
+  Printer printer(output.get(), '$');
+
+  printer.Print("// This file is generated by s12-proto api generator. Please DO NOT modify.\n");
+  printer.Print("#pragma once\n");
+
+  for (int dep_index = 0; dep_index < file->dependency_count(); ++dep_index) {
+    auto imported_file = file->dependency(dep_index);
+    std::vector<std::string> dep_paths = tokenize(StripProto(imported_file->name()), "/");
+    dep_paths.pop_back();
+    std::string dep_dir = join(dep_paths, "/");
+    if (dep_dir == dir) {
+      PrintDjinniObjcSupport(&printer, imported_file);
+    }
+  }
+  PrintDjinniObjcSupport(&printer, file);
+}
+
+void APIGenerator::PrintDjinniYAML(
+  google::protobuf::io::Printer *printer,
+  const google::protobuf::FileDescriptor *file,
+  const std::string& main_file_name) const {
+  string file_name = StripProto(file->name());
+  std::vector<std::string> paths = tokenize(StripProto(file_name), "/");
+  paths.pop_back();
+  std::string dir = join(paths, "_");
+
+  std::map<string, string> vars;
+  vars["dir"] = dir;
+  for (int message_index = 0; message_index < file->message_type_count();
+       ++message_index) {
+    const Descriptor *message = file->message_type(message_index);
+    vars["message_name"] = message->name();
+    vars["cpp_type_name"] = DotsToColons(message->full_name());
+    vars["objc_header"] = DotsToSlashs(message->full_name());
+    vars["file_name"] = StripProto(file->name());
+    vars["objc_file_name"] = ToCamelCase(tokenize(StripProto(file->name()), "/").back());
+    vars["main_file_name"] = main_file_name;
+
+    const auto options = file->options();
+    vars["java_package"] = options.java_package();
+    vars["java_package_slashes"] = DotsToSlashs(options.java_package());
+    vars["objc_class_prefix"] = options.objc_class_prefix();
+
+    printer->Print("---\n");
+    printer->Print(vars, "name: pb_$message_name$\n");
+    printer->Print("typedef: 'record deriving(eq, ord, parcelable)'\n");
+    printer->Print("params: []\n");
+    printer->Print("prefix: 'pb'\n");
+
+    printer->Print("cpp:\n");
+    printer->Indent();
+    printer->Print(vars, "typename: '$cpp_type_name$'\n");
+    printer->Print(vars, "header: '\"$file_name$.pb.h\"'\n");
+    printer->Print("byValue: false\n");
+    printer->Outdent();
+
+    printer->Print("objc:\n");
+    printer->Indent();
+    printer->Print(vars, "typename: '$objc_class_prefix$$message_name$'\n");
+    printer->Print(vars, "header: '\"$dir$_$objc_file_name$.pbobjc.h\"'\n");
+    printer->Print(vars, "boxed: '$objc_class_prefix$$message_name$'\n");
+    printer->Print("pointer: true\n");
+    printer->Print("hash: '%s.hash()'\n");
+    printer->Outdent();
+
+    printer->Print("objcpp:\n");
+    printer->Indent();
+    printer->Print(vars, "translator: 'djinni::$cpp_type_name$::Translator'\n");
+    printer->Print(vars, "header: '\"$main_file_name$.djinni.objc.h\"'\n");
+    printer->Outdent();
+
+    printer->Print("java:\n");
+    printer->Indent();
+    printer->Print(vars, "typename: '$java_package$.$message_name$'\n");
+    printer->Print(vars, "boxed: '$java_package$.$message_name$'\n");
+    printer->Print("reference: true\n");
+    printer->Print("generic: false\n");
+    printer->Print("hash: '%s.hashCode()'\n");
+    printer->Outdent();
+
+    printer->Print("jni:\n");
+    printer->Indent();
+    printer->Print(vars, "translator: 'djinni::$cpp_type_name$::Translator'\n");
+    printer->Print(vars, "header: '\"$main_file_name$.djinni.jni.h\"'\n");
+    printer->Print(vars, "typename: jobject\n");
+    printer->Print(vars, "typeSignature: 'L$java_package_slashes$.$message_name$;'\n");
+    printer->Outdent();
+
+    printer->Print("\n");
+  }
+}
+
+void APIGenerator::PrintDjinniObjcSupport(
+  google::protobuf::io::Printer *printer,
+  const google::protobuf::FileDescriptor *file) const {
+  string file_name = StripProto(file->name());
+  std::vector<std::string> paths = tokenize(StripProto(file_name), "/");
+  paths.pop_back();
+  std::string dir = join(paths, "_");
+
+  std::map<string, string> vars;
+  vars["dir"] = dir;
+  for (int message_index = 0; message_index < file->message_type_count();
+       ++message_index) {
+    const Descriptor *message = file->message_type(message_index);
+    vars["message_name"] = message->name();
+    vars["objc_file_name"] = ToCamelCase(tokenize(StripProto(file->name()), "/").back());
+    vars["cpp_type_name"] = DotsToColons(message->full_name());
+    vars["file_name"] = StripProto(file->name());
+    vars["cpp_header"] = DotsToSlashs(ToLower(message->full_name()));
+    vars["objc_header"] = DotsToSlashs(message->full_name());
+    const auto options = file->options();
+    vars["objc_class_prefix"] = options.objc_class_prefix();
+
+    printer->Print(vars, "#include \"$file_name$.pb.h\"\n");
+    printer->Print(vars, "#import \"$dir$_$objc_file_name$.pbobjc.h\"\n\n");
+
+    printer->Print(vars, "namespace djinni::$cpp_type_name$ {\n");
+    printer->Print(vars, "struct Translator {\n");
+    printer->Indent();
+    printer->Print(vars, "using CppType = ::$cpp_type_name$;\n");
+    printer->Print(vars, "using ObjcType = $objc_class_prefix$$message_name$*;\n");
+    printer->Print("using Boxed = Translator;\n\n");
+
+    printer->Print("static CppType toCpp(ObjcType message) {\n");
+    printer->Indent();
+    printer->Print("assert(message);\n");
+    printer->Print("NSData * data = [message data];\n");
+    printer->Print("const void *bytes = [data bytes];\n");
+    printer->Print("int byte_len = (int)[data length];\n");
+    printer->Print("CppType cpp_message;\n");
+    printer->Print("cpp_message.ParseFromArray(bytes, byte_len);\n");
+    printer->Print("return cpp_message;\n");
+    printer->Outdent();
+    printer->Print("}\n\n");
+
+    printer->Print("static ObjcType fromCpp(const CppType& message) {\n");
+    printer->Indent();
+    printer->Print("size_t byte_size = message.ByteSizeLong();\n");
+    printer->Print("void *bytes = malloc(byte_size);\n");
+    printer->Print("message.SerializeToArray(bytes, static_cast<int>(byte_size));\n");
+    printer->Print("NSData *data = [NSData dataWithBytes: bytes length: (int)byte_size];\n");
+    printer->Print("NSError *error;\n");
+    printer->Print(vars, "return [$objc_class_prefix$$message_name$ parseFromData:data error:&error];\n");
+    printer->Outdent();
+    printer->Print("}\n");
+
+    printer->Outdent();
+    printer->Print(vars, "};\n");
+
+    printer->Print(vars, "}  //namespace djinni::$cpp_type_name$\n\n");
+  }
+}
+
+void APIGenerator::GenerateDjinniJNISupport(
+  const google::protobuf::FileDescriptor *file,
+  google::protobuf::compiler::GeneratorContext *context) const {
+  string file_name = StripProto(file->name());
+  std::vector<std::string> paths = tokenize(StripProto(file_name), "/");
+  paths.pop_back();
+  std::string dir = join(paths, "/");
+
+  std::unique_ptr<ZeroCopyOutputStream> output(
+      context->Open(file_name + ".djinni.jni.h"));
+  Printer printer(output.get(), '$');
+
+  printer.Print("// This file is generated by s12-proto api generator. Please DO NOT modify.\n");
+  printer.Print("#pragma once\n");
+  printer.Print("#include \"djinni_support.hpp\"\n");
+
+  for (int dep_index = 0; dep_index < file->dependency_count(); ++dep_index) {
+    auto imported_file = file->dependency(dep_index);
+    std::vector<std::string> dep_paths = tokenize(StripProto(imported_file->name()), "/");
+    dep_paths.pop_back();
+    std::string dep_dir = join(dep_paths, "/");
+    if (dep_dir == dir) {
+      PrintDjinniJNISupport(&printer, imported_file);
+    }
+  }
+  PrintDjinniJNISupport(&printer, file);
+}
+
+void APIGenerator::PrintDjinniJNISupport(
+  google::protobuf::io::Printer *printer,
+  const google::protobuf::FileDescriptor *file) const {
+  string file_name = StripProto(file->name());
+  std::vector<std::string> paths = tokenize(StripProto(file_name), "/");
+  paths.pop_back();
+  std::string dir = join(paths, "_");
+
+  std::map<string, string> vars;
+  vars["dir"] = dir;
+  for (int message_index = 0; message_index < file->message_type_count();
+       ++message_index) {
+    const Descriptor *message = file->message_type(message_index);
+    vars["message_name"] = message->name();
+    vars["cpp_type_name"] = DotsToColons(message->full_name());
+    vars["file_name"] = StripProto(file->name());
+    vars["cpp_header"] = DotsToSlashs(ToLower(message->full_name()));
+    const auto options = file->options();
+    vars["java_package"] = DotsToSlashs(options.java_package());
+
+    printer->Print(vars, "#include \"$file_name$.pb.h\"\n");
+
+    printer->Print(vars, "namespace djinni::$cpp_type_name$ {\n");
+
+    // JNI Info
+    printer->Print("struct JNIInfo {\n");
+    printer->Indent();
+    printer->Print(vars, "const GlobalRef<jclass> clazz { jniFindClass(\"$java_package$/$message_name$\")  };\n");
+    printer->Print(vars, "const jmethodID method_toBytes { jniGetMethodID(clazz.get(), \"toByteArray\", \"()[B\") };\n");
+    printer->Print(vars, "const jmethodID method_byteSize { jniGetMethodID(clazz.get(), \"getSerializedSize\", \"()I\") };\n");
+    printer->Print(vars, "const jmethodID method_fromBytes { jniGetStaticMethodID(clazz.get(), \"parseFrom\", \"([B)L$java_package$/$message_name$;\") };\n");
+    printer->Outdent();
+    printer->Print("};\n\n");
+
+    printer->Print("struct Translator {\n");
+    printer->Indent();
+    printer->Print(vars, "using CppType = ::$cpp_type_name$;\n");
+    printer->Print("using JniType = jobject;\n");
+    printer->Print("using Boxed = Translator;\n\n");
+
+    printer->Print("static CppType toCpp(JNIEnv* jniEnv, JniType j) {\n");
+    printer->Indent();
+    printer->Print("assert(j != nullptr);\n");
+    printer->Print("const auto& data = JniClass<JNIInfo>::get();\n");
+    printer->Print("assert(jniEnv->IsInstanceOf(j, data.clazz.get()));\n");
+    printer->Print("jbyte b = jniEnv->CallByteMethod(j, data.method_toBytes);\n");
+    printer->Print("auto byte_len = jniEnv->CallIntMethod(j, data.method_byteSize);\n");
+    printer->Print("jniExceptionCheck(jniEnv);\n");
+    printer->Print("CppType cpp_message;\n");
+    printer->Print("cpp_message.ParseFromArray(&b, byte_len);\n");
+    printer->Print("return cpp_message;\n");
+    printer->Outdent();
+    printer->Print("}\n\n");
+
+    printer->Print("static LocalRef<JniType> fromCpp(JNIEnv* jniEnv, const CppType& message) {\n");
+    printer->Indent();
+    printer->Print("size_t size = message.ByteSizeLong();\n");
+    printer->Print("jbyte* temp = new jbyte[size];\n");
+    printer->Print("message.SerializeToArray(temp, static_cast<int>(size));\n");
+    printer->Print("jbyteArray bytes = jniEnv->NewByteArray(size);\n");
+    printer->Print("jniEnv->SetByteArrayRegion(bytes, 0, size, temp);\n");
+    printer->Print("delete[] temp;\n");
+    printer->Print("const auto& data = JniClass<JNIInfo>::get();\n");
+    printer->Print("auto j = LocalRef<JniType>{jniEnv->CallStaticObjectMethod(data.clazz.get(), data.method_fromBytes, bytes)};\n");
+    printer->Print("jniExceptionCheck(jniEnv);\n");
+    printer->Print("return j;\n");
+    printer->Outdent();
+    printer->Print("}\n");
+
+    printer->Outdent();
+    printer->Print(vars, "};\n");
+
+    printer->Print(vars, "}  //namespace djinni::$cpp_type_name$\n\n");
+  }
+}
+
 void APIGenerator::Generate(
   const google::protobuf::FileDescriptor *file,
   const std::string &parameter,
@@ -326,5 +631,15 @@ void APIGenerator::Generate(
   std::string *error) const {
   GenerateAPIHeader(file, parameter, context);
   GenerateAPISource(file, parameter, context);
+}
+
+void APIGenerator::GenerateDjinniSupport(
+  const google::protobuf::FileDescriptor *file,
+  const std::string &parameter,
+  google::protobuf::compiler::GeneratorContext *context,
+  std::string *error) const {
+  GenerateDjinniYAML(file, context);
+  GenerateDjinniObjcSupport(file, context);
+  GenerateDjinniJNISupport(file, context);
 }
 }  // namespace cruxclient_generator
