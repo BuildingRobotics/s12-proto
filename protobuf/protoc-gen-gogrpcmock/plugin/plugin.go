@@ -39,7 +39,10 @@ const defaultMessageDepth = 10
 
 type grpcmock struct {
 	*generator.Generator
-	contextPkg string
+	imports    generator.PluginImports
+	contextPkg generator.Single
+	codesPkg   generator.Single
+	statusPkg  generator.Single
 }
 
 type oneofField struct {
@@ -91,6 +94,11 @@ func (g *grpcmock) Generate(file *generator.FileDescriptor) {
 		return
 	}
 
+	g.imports = generator.NewPluginImports(g.Generator)
+	g.contextPkg = g.imports.NewImport("context")
+	g.codesPkg = g.imports.NewImport("google.golang.org/grpc/codes")
+	g.statusPkg = g.imports.NewImport("google.golang.org/grpc/status")
+
 	for _, service := range file.FileDescriptorProto.Service {
 		g.mockService(file, service)
 	}
@@ -100,9 +108,8 @@ func (g *grpcmock) GenerateImports(file *generator.FileDescriptor) {
 	if len(file.FileDescriptorProto.Service) == 0 {
 		return
 	}
-	imports := generator.NewPluginImports(g.Generator)
-	g.contextPkg = imports.NewImport("context").Use()
-	imports.GenerateImports(file)
+
+	g.imports.GenerateImports(file)
 }
 
 func (g *grpcmock) mockService(file *generator.FileDescriptor, service *descriptor.ServiceDescriptorProto) {
@@ -113,19 +120,40 @@ func (g *grpcmock) mockService(file *generator.FileDescriptor, service *descript
 	g.P(`type `, servTypeName, ` struct {}`)
 	g.P()
 	for _, method := range service.Method {
-		g.mockMethod(servTypeName, method)
+		g.mockMethod(servTypeName, method, service)
 	}
 }
 
-func (g *grpcmock) mockMethod(servTypeName string, method *descriptor.MethodDescriptorProto) {
+func (g *grpcmock) mockMethod(servTypeName string, method *descriptor.MethodDescriptorProto, service *descriptor.ServiceDescriptorProto) {
 	if method.GetServerStreaming() || method.GetClientStreaming() {
 		// TODO: [RC] Mock streaming methods.
+		origServName := service.GetName()
+		servName := generator.CamelCase(origServName)
+
+		methName := generator.CamelCase(method.GetName())
+		inType := g.typeName(method.GetInputType())
+
+		streamServerName := fmt.Sprintf("%s_%sServer", servName, methName)
+
+		g.codesPkg.Use()
+		g.statusPkg.Use()
+
+		g.P(`func (m *`, servTypeName, `) `, methName, `(req *`, inType, `, stream `, streamServerName, `) error {`)
+		g.In()
+
+		g.P(`return `, g.statusPkg.Name(), `.Errorf(`, g.codesPkg.Name(), `.Unimplemented, "method `, methName, ` not implemented")`)
+
+		g.Out()
+		g.P(`}`)
+
 		return
 	}
 
 	methName := generator.CamelCase(method.GetName())
 	inType := g.typeName(method.GetInputType())
 	outType := g.typeName(method.GetOutputType())
+
+	g.contextPkg.Use()
 
 	g.P(`func (m *`, servTypeName, `) `, methName, `(ctx context.Context, req *`, inType, `) (*`, outType, `, error){`)
 	g.In()
