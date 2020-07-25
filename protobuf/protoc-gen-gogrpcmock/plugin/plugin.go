@@ -122,6 +122,14 @@ func (g *grpcmock) mockService(file *generator.FileDescriptor, service *descript
 	for _, method := range service.Method {
 		g.mockMethod(servTypeName, method, service)
 	}
+	g.embedUnimplementedMockMethod(servName)
+}
+
+func (g *grpcmock) embedUnimplementedMockMethod(servName string) {
+	servTypeName := fmt.Sprintf("%sServer", servName)
+	servMockTypeName := fmt.Sprintf("%sMock", servName)
+	methName := fmt.Sprintf("mustEmbedUnimplemented%s", servTypeName)
+	g.P(`func (m *`, servMockTypeName, `) `, methName, `() {}`)
 }
 
 func (g *grpcmock) mockMethod(servTypeName string, method *descriptor.MethodDescriptorProto, service *descriptor.ServiceDescriptorProto) {
