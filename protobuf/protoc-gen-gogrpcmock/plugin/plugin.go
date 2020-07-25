@@ -117,19 +117,16 @@ func (g *grpcmock) mockService(file *generator.FileDescriptor, service *descript
 	servName := generator.CamelCase(origServName)
 	servTypeName := fmt.Sprintf("%sMock", servName)
 
-	g.P(`type `, servTypeName, ` struct {}`)
+	g.P(`type `, servTypeName, ` struct {`)
+	g.In()
+	g.P(`*Unimplemented`, servName, `Server`)
+	g.Out()
+	g.P(`}`)
+
 	g.P()
 	for _, method := range service.Method {
 		g.mockMethod(servTypeName, method, service)
 	}
-	g.embedUnimplementedMockMethod(servName)
-}
-
-func (g *grpcmock) embedUnimplementedMockMethod(servName string) {
-	servTypeName := fmt.Sprintf("%sServer", servName)
-	servMockTypeName := fmt.Sprintf("%sMock", servName)
-	methName := fmt.Sprintf("mustEmbedUnimplemented%s", servTypeName)
-	g.P(`func (m *`, servMockTypeName, `) `, methName, `() {}`)
 }
 
 func (g *grpcmock) mockMethod(servTypeName string, method *descriptor.MethodDescriptorProto, service *descriptor.ServiceDescriptorProto) {
